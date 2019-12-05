@@ -91,7 +91,7 @@ class TICC:
         empirical_covariances = {}
 
         # PERFORM TRAINING ITERATIONS
-        pool = Pool(processes=self.num_proc)  # multi-threading
+        # pool = Pool(processes=self.num_proc)  # multi-threading
         for iters in range(self.maxIters):
             print("\n\n\nITERATION ###", iters)
             # Get the train and test points
@@ -104,7 +104,7 @@ class TICC:
             # train_clusters holds the indices in complete_D_train
             # for each of the clusters
             opt_res = self.train_clusters(cluster_mean_info, cluster_mean_stacked_info, complete_D_train,
-                                          empirical_covariances, len_train_clusters, time_series_col_size, pool,
+                                          empirical_covariances, len_train_clusters, time_series_col_size,# pool,
                                           train_clusters_arr)
 
             self.optimize_clusters(computed_covariance, len_train_clusters, log_det_values, opt_res,
@@ -192,9 +192,9 @@ class TICC:
                 break
             old_clustered_points = before_empty_cluster_assign
             # end of training
-        if pool is not None:
-            pool.close()
-            pool.join()
+        # if pool is not None:
+        #     pool.close()
+        #     pool.join()
         train_confusion_matrix_EM = compute_confusion_matrix(self.number_of_clusters, clustered_points,
                                                              training_indices)
         train_confusion_matrix_GMM = compute_confusion_matrix(self.number_of_clusters, gmm_clustered_pts,
@@ -272,14 +272,20 @@ class TICC:
             inv_cov_dict[cluster] = inv_cov_matrix
             log_det_dict[cluster] = log_det_cov
         # For each point compute the LLE
-        print("beginning the smoothening ALGORITHM")
+        # print("beginning the smoothening ALGORITHM")
         LLE_all_points_clusters = np.zeros([clustered_points_len, self.number_of_clusters])
         for point in range(clustered_points_len):
             if point + self.window_size - 1 < complete_D_train.shape[0]:
                 for cluster in range(self.number_of_clusters):
                     cluster_mean = cluster_mean_info[self.number_of_clusters, cluster]
                     cluster_mean_stacked = cluster_mean_stacked_info[self.number_of_clusters, cluster]
-                    x = complete_D_train[point, :] - cluster_mean_stacked[0:(self.num_blocks - 1) * n]
+                    # print(complete_D_train[point, :])
+                    aaaa = np.array(list(complete_D_train[point, :])*(cluster_mean_stacked[0:(self.num_blocks - 1) * n].shape[0]//complete_D_train[point, :].shape[0]))
+                    # print(cluster_mean_stacked[0:(self.num_blocks - 1) * n])
+                    # x = np.subtract(complete_D_train[point, :], cluster_mean_stacked[0:(self.num_blocks - 1) * n])
+                    x = aaaa - cluster_mean_stacked[0:(self.num_blocks - 1) * n]
+                    # x = complete_D_train[point, :] - cluster_mean_stacked[0:(self.num_blocks - 1) * n]
+                    # x = cluster_mean_stacked[0:(self.num_blocks - 1) * n] - complete_D_train[point, :]
                     inv_cov_matrix = inv_cov_dict[cluster]
                     log_det_cov = log_det_dict[cluster]
                     lle = np.dot(x.reshape([1, (self.num_blocks - 1) * n]),
@@ -290,9 +296,10 @@ class TICC:
 
     def optimize_clusters(self, computed_covariance, len_train_clusters, log_det_values, optRes, train_cluster_inverse):
         for cluster in range(self.number_of_clusters):
-            if optRes[cluster] == None:
+            if optRes[cluster] is None:
                 continue
-            val = optRes[cluster].get()
+            val = optRes[cluster]
+            # val = optRes[cluster].get()
             print("OPTIMIZATION for Cluster #", cluster, "DONE!!!")
             # THIS IS THE SOLUTION
             S_est = upperToFull(val, 0)
@@ -308,7 +315,8 @@ class TICC:
             print("length of the cluster ", cluster, "------>", len_train_clusters[cluster])
 
     def train_clusters(self, cluster_mean_info, cluster_mean_stacked_info, complete_D_train, empirical_covariances,
-                       len_train_clusters, n, pool, train_clusters_arr):
+                       len_train_clusters, n, #pool,
+                       train_clusters_arr):
         optRes = [None for i in range(self.number_of_clusters)]
         for cluster in range(self.number_of_clusters):
             cluster_length = len_train_clusters[cluster]
@@ -334,7 +342,8 @@ class TICC:
                 rho = 1
                 solver = ADMMSolver(lamb, self.window_size, size_blocks, 1, S)
                 # apply to process pool
-                optRes[cluster] = pool.apply_async(solver, (1000, 1e-6, 1e-6, False,))
+                # optRes[cluster] = pool.apply_async(solver, (1000, 1e-6, 1e-6, False,))
+                optRes[cluster] = solver(1000, 1e-6, 1e-6, False)
         return optRes
 
     def stack_training_data(self, Data, n, num_train_points, training_indices):
@@ -359,10 +368,16 @@ class TICC:
         return str_NULL
 
     def load_data(self, input_file):
-        Data = np.loadtxt(input_file, delimiter=",")
-        (m, n) = Data.shape  # m: num of observations, n: size of observation vector
+        # Data = np.loadtxt(input_file, delimiter=",")
+        (m, n) = input_file.shape  # m: num of observations, n: size of observation vector
         print("completed getting the data")
-        return Data, m, n
+        return input_file.values, m, n
+
+    # def load_data(self, input_file):
+    #     Data = np.loadtxt(input_file, delimiter=",")
+    #     (m, n) = Data.shape  # m: num of observations, n: size of observation vector
+    #     print("completed getting the data")
+    #     return Data, m, n
 
     def log_parameters(self):
         print("lam_sparse", self.lambda_parameter)
