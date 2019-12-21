@@ -1,3 +1,5 @@
+## This repo was copied from here: https://github.com/mtrudeau314/TICC
+
 # TICC
 TICC is a python solver for efficiently segmenting and clustering a multivariate time series. It takes as input a T-by-n data matrix, a regularization parameter `lambda` and smoothness parameter `beta`, the window size `w` and the number of clusters `k`.  TICC breaks the T timestamps into segments where each segment belongs to one of the `k` clusters. The total number of segments is affected by the smoothness parameter `beta`. It does so by running an EM algorithm where TICC alternately assigns points to clusters using a dynamic programming algorithm and updates the cluster parameters by solving a Toeplitz Inverse Covariance Estimation problem. 
 

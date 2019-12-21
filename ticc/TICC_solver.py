@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 from sklearn import mixture
 from sklearn.cluster import KMeans
 import pandas as pd
-from multiprocessing import Pool
+# from multiprocessing import Pool
 
-from src.TICC_helper import *
-from src.admm_solver import ADMMSolver
+from ticc.utils import *
+from ticc.admm_solver import ADMMSolver
 
 
 
