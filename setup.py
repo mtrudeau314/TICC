@@ -1,4 +1,3 @@
-# LOCKHEED MARTIN PROPRIETARY INFORMATION
 from setuptools import setup
 
 setup(
